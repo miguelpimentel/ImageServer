@@ -1,21 +1,17 @@
-image: golang:1.7
+image: registry.gitlab.com/baldissera/nexteimageserver
 stages:
   - build
-  - test
+  # - test
 
-#before_script:
-#  - go get github.com/tools/godep
-#  - cp -r /builds/user /go/src/github.com/user/
-#  - cd /go/src/github.com/user/repo
-
-build-my-project:
+build:
   stage: build
+  before_script:
+    - cd app 
   script:
-    - godep restore
-    - godep go build
+    - go build app.go
 
-test-my-project:
-  stage: test
-  script:
-    - godep restore
-    - godep go test -v -cover ./...
+# test:
+#   stage: test
+#   script:
+#     - godep restore
+#     - godep go test -v -cover ./...
