@@ -1,7 +1,7 @@
 image: registry.gitlab.com/baldissera/nexteimageserver
 stages:
   - build
-  # - test
+  - test
 
 build:
   stage: build
@@ -10,8 +10,9 @@ build:
   script:
     - go build app.go
 
-# test:
-#   stage: test
-#   script:
-#     - godep restore
-#     - godep go test -v -cover ./...
+unit_test:
+  stage: test
+  before_script:
+    - cd app 
+  script:
+    - go test -cover
