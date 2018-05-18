@@ -3,6 +3,7 @@ stages:
   - build
   - test
 
+# Build application
 build:
   stage: build
   before_script:
@@ -10,9 +11,25 @@ build:
   script:
     - go build app.go
 
+# Run test with coverage
 unit_test:
   stage: test
   before_script:
     - cd app 
   script:
     - go test -cover
+
+# Create new docker image
+build_image:
+    stage: test
+    image: docker:git
+    services:
+      - docker:dind
+    script:
+      - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
+      - docker build -t registry.gitlab.com/baldissera/nexteimageserver .
+      - docker push registry.gitlab.com/baldissera/nexteimageserver:latest
+    # only:
+    #   -tags
+    
+  #   - tags
