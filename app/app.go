@@ -10,6 +10,7 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
+	"io"
 	"log"
 
 	// Image Handle
@@ -64,6 +65,7 @@ func main() {
 	router.GET("/photos", getPhotos)    // GET
 	router.POST("/photos", createPhoto) // POST
 	router.GET("/image", handler)       // GET image from server PATH
+	router.POST("/upload", upload)      // POST image using multipart/form-data
 
 	// Working with files
 
@@ -124,6 +126,26 @@ func getImage() image.Image {
 
 	fmt.Println(loadedImage)
 	return loadedImage
+}
+
+func upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+
+	r.ParseMultipartForm(32 << 20)
+
+	file, handler, err := r.FormFile("uploadfile")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer file.Close()
+	fmt.Fprintf(w, "%v", handler.Header)
+	f, err := os.OpenFile("./test/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer f.Close()
+	io.Copy(f, file)
 }
 
 func writeImage(w http.ResponseWriter, img *image.Image) {
