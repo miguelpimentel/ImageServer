@@ -9,7 +9,6 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
-	"io"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
@@ -30,18 +29,15 @@ func main() {
 
 	// Router
 	router := httprouter.New()
-	router.GET("/image", handler)         // GET image from server PATH
-	router.POST("/upload", uploadHandler) // POST image using multipart/form-data
+	router.GET("/image", handler)      // GET image from server PATH
+	router.POST("/upload", UploadFile) // POST image using multipart/form-data
 
 	// Working with files
-
 	router.ServeFiles("/src/*filepath", http.Dir("/src"))
 
 	// Trigger server
 	env_config()
 	http.ListenAndServe(":3003", router)
-
-	// save()
 }
 
 // Enviroment Setup
@@ -117,52 +113,8 @@ func writeImage(w http.ResponseWriter, img *image.Image) {
 
 // POST image
 
-func uploadHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-
-	var (
-		status int
-		err    error
-	)
-	defer func() {
-		if nil != err {
-			http.Error(res, err.Error(), status)
-		}
-	}()
-
-	// parse request
-	// const _24K = (1 << 20) * 24
-	if err = req.ParseMultipartForm(32 << 20); nil != err {
-		status = http.StatusInternalServerError
-		return
-	}
-	fmt.Println("No memory problem")
-	for _, fheaders := range req.MultipartForm.File {
-		for _, hdr := range fheaders {
-			// open uploaded
-			var infile multipart.File
-			if infile, err = hdr.Open(); nil != err {
-				status = http.StatusInternalServerError
-				return
-			}
-			// open destination
-			var outfile *os.File
-			if outfile, err = os.Create("./uploaded/" + hdr.Filename); nil != err {
-				status = http.StatusInternalServerError
-				return
-			}
-			// 32K buffer copy
-			var written int64
-			if written, err = io.Copy(outfile, infile); nil != err {
-				status = http.StatusInternalServerError
-				return
-			}
-			res.Write([]byte("uploaded file:" + hdr.Filename + ";length:" + strconv.Itoa(int(written))))
-		}
-	}
-}
-
 // UploadFile uploads a file to the server
-func uploadFile(w http.ResponseWriter, r *http.Request) {
+func UploadFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -170,12 +122,10 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	file, handle, err := r.FormFile("file")
-
 	if err != nil {
 		fmt.Fprintf(w, "%v", err)
 		return
 	}
-
 	defer file.Close()
 
 	mimeType := handle.Header.Get("Content-Type")
@@ -197,12 +147,13 @@ func saveFile(w http.ResponseWriter, file multipart.File, handle *multipart.File
 		fmt.Println("Here1")
 		return
 	}
+
 	err = ioutil.WriteFile("./files/"+handle.Filename, data, 0666)
 	if err != nil {
 		fmt.Fprintf(w, "%v", err)
+
 		return
 	}
-
 	jsonResponse(w, http.StatusCreated, "File uploaded successfully!.")
 }
 
