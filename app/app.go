@@ -11,7 +11,9 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+	"io/ioutil"
 	"log"
+	"mime/multipart"
 
 	// Image Handle
 
@@ -61,11 +63,11 @@ func main() {
 
 	// Router
 	router := httprouter.New()
-	router.GET("/", indexHandler)       // GET
-	router.GET("/photos", getPhotos)    // GET
-	router.POST("/photos", createPhoto) // POST
-	router.GET("/image", handler)       // GET image from server PATH
-	router.POST("/upload", upload)      // POST image using multipart/form-data
+	router.GET("/", indexHandler)         // GET
+	router.GET("/photos", getPhotos)      // GET
+	router.POST("/photos", createPhoto)   // POST
+	router.GET("/image", handler)         // GET image from server PATH
+	router.POST("/upload", uploadHandler) // POST image using multipart/form-data
 
 	// Working with files
 
@@ -74,6 +76,8 @@ func main() {
 	// Trigger server
 	env_config()
 	http.ListenAndServe(":3003", router)
+
+	// save()
 }
 
 // Enviroment Setup
@@ -102,6 +106,7 @@ func getImage() image.Image {
 	if err != nil {
 		// Handle error
 	}
+
 	defer existingImageFile.Close()
 
 	// Calling the generic image.Decode() will tell give us the data
@@ -128,26 +133,6 @@ func getImage() image.Image {
 	return loadedImage
 }
 
-func upload(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-
-	r.ParseMultipartForm(32 << 20)
-
-	file, handler, err := r.FormFile("uploadfile")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer file.Close()
-	fmt.Fprintf(w, "%v", handler.Header)
-	f, err := os.OpenFile("./test/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer f.Close()
-	io.Copy(f, file)
-}
-
 func writeImage(w http.ResponseWriter, img *image.Image) {
 
 	buffer := new(bytes.Buffer) // Define a buffer to store an image to requests
@@ -164,6 +149,99 @@ func writeImage(w http.ResponseWriter, img *image.Image) {
 	if _, err := w.Write(buffer.Bytes()); err != nil {
 		log.Println("unable to write image.")
 	}
+}
+
+// POST image
+
+func uploadHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	var (
+		status int
+		err    error
+	)
+	defer func() {
+		if nil != err {
+			http.Error(res, err.Error(), status)
+		}
+	}()
+	// parse request
+	// const _24K = (1 << 20) * 24
+	if err = req.ParseMultipartForm(32 << 20); nil != err {
+		status = http.StatusInternalServerError
+		return
+	}
+	fmt.Println("No memory problem")
+	for _, fheaders := range req.MultipartForm.File {
+		for _, hdr := range fheaders {
+			// open uploaded
+			var infile multipart.File
+			if infile, err = hdr.Open(); nil != err {
+				status = http.StatusInternalServerError
+				return
+			}
+			// open destination
+			var outfile *os.File
+			if outfile, err = os.Create("./uploaded/" + hdr.Filename); nil != err {
+				status = http.StatusInternalServerError
+				return
+			}
+			// 32K buffer copy
+			var written int64
+			if written, err = io.Copy(outfile, infile); nil != err {
+				status = http.StatusInternalServerError
+				return
+			}
+			res.Write([]byte("uploaded file:" + hdr.Filename + ";length:" + strconv.Itoa(int(written))))
+		}
+	}
+}
+
+// UploadFile uploads a file to the server
+func uploadFile(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	file, handle, err := r.FormFile("file")
+	if err != nil {
+		fmt.Fprintf(w, "%v", err)
+		return
+	}
+	defer file.Close()
+
+	mimeType := handle.Header.Get("Content-Type")
+
+	switch mimeType {
+	case "image/jpeg":
+		saveFile(w, file, handle)
+	case "image/png":
+		saveFile(w, file, handle)
+	default:
+		jsonResponse(w, http.StatusBadRequest, "The format file is not valid.")
+	}
+}
+
+func saveFile(w http.ResponseWriter, file multipart.File, handle *multipart.FileHeader) {
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		fmt.Fprintf(w, "%v", err)
+		fmt.Println("Here1")
+		return
+	}
+	err = ioutil.WriteFile("./files/"+handle.Filename, data, 0666)
+	if err != nil {
+		fmt.Fprintf(w, "%v", err)
+		return
+	}
+
+	jsonResponse(w, http.StatusCreated, "File uploaded successfully!.")
+}
+
+func jsonResponse(w http.ResponseWriter, code int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	fmt.Fprint(w, message)
 }
 
 // Testing
