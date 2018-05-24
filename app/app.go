@@ -5,7 +5,6 @@ import (
 	// Formatting and Setting up
 
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"image"
 	"image/jpeg"
@@ -15,10 +14,8 @@ import (
 	"log"
 	"mime/multipart"
 
-	// Image Handle
-
 	// Http and request
-	"math/rand"
+
 	"net/http"
 	"os"
 	"strconv"
@@ -27,45 +24,12 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-type Photo struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-var photos []Photo
-
-// HTTP Handlers
-
-func getPhotos(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(photos)
-}
-
-func createPhoto(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Header().Set("Content-Type", "application/json")
-	var photo Photo
-	_ = json.NewDecoder(r.Body).Decode(&photo)
-	photo.ID = strconv.Itoa(rand.Intn(100000000))
-	photos = append(photos, photo)
-	json.NewEncoder(w).Encode(photo)
-}
-
-func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	fmt.Fprintf(w, "This is the RESTful api")
-}
-
 // Main function
 
 func main() {
 
-	photos = append(photos, Photo{ID: "nd327dh39w4", Name: "photo324.jpg"})
-	photos = append(photos, Photo{ID: "372834whefw", Name: "photo232.jpg"})
-
 	// Router
 	router := httprouter.New()
-	router.GET("/", indexHandler)         // GET
-	router.GET("/photos", getPhotos)      // GET
-	router.POST("/photos", createPhoto)   // POST
 	router.GET("/image", handler)         // GET image from server PATH
 	router.POST("/upload", uploadHandler) // POST image using multipart/form-data
 
@@ -154,6 +118,7 @@ func writeImage(w http.ResponseWriter, img *image.Image) {
 // POST image
 
 func uploadHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+
 	var (
 		status int
 		err    error
@@ -163,6 +128,7 @@ func uploadHandler(res http.ResponseWriter, req *http.Request, _ httprouter.Para
 			http.Error(res, err.Error(), status)
 		}
 	}()
+
 	// parse request
 	// const _24K = (1 << 20) * 24
 	if err = req.ParseMultipartForm(32 << 20); nil != err {
@@ -204,10 +170,12 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	file, handle, err := r.FormFile("file")
+
 	if err != nil {
 		fmt.Fprintf(w, "%v", err)
 		return
 	}
+
 	defer file.Close()
 
 	mimeType := handle.Header.Get("Content-Type")
