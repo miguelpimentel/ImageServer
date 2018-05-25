@@ -32,8 +32,7 @@ func main() {
 	router.GET("/image", handler)      // GET image from server PATH
 	router.POST("/upload", UploadFile) // POST image using multipart/form-data
 
-	// Working with files
-	router.ServeFiles("/src/*filepath", http.Dir("/src"))
+	router
 
 	// Trigger server
 	env_config()
@@ -60,36 +59,26 @@ func handler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 func getImage() image.Image {
 
-	// Read image from file that already exists
 	existingImageFile, err := os.Open("a.png")
-
 	if err != nil {
-		// Handle error
 	}
 
 	defer existingImageFile.Close()
 
-	// Calling the generic image.Decode() will tell give us the data
-	// and type of image it is as a string. We expect "png"
 	imageData, imageType, err := image.Decode(existingImageFile)
+
 	if err != nil {
 	}
 
 	fmt.Println(imageData)
 	fmt.Println(imageType)
 
-	// We only need this because we already read from the file
-	// We have to reset the file pointer back to beginning
 	existingImageFile.Seek(0, 0)
 
-	// Alternatively, since we know it is a png already
-	// we can call png.Decode() directly
 	loadedImage, err := png.Decode(existingImageFile)
 	if err != nil {
-		// Handler error
 	}
 
-	fmt.Println(loadedImage)
 	return loadedImage
 }
 
@@ -115,7 +104,6 @@ func writeImage(w http.ResponseWriter, img *image.Image) {
 
 // UploadFile uploads a file to the server
 func UploadFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
