@@ -2,7 +2,7 @@ package main
 
 import (
 
-	// Formatting and Setting up
+	// OS and File
 
 	"bytes"
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"log"
 	"mime/multipart"
 
-	// Http and request
+	// HTTP
 
 	"net/http"
 	"os"
@@ -27,8 +27,8 @@ func main() {
 
 	// Router
 	router := httprouter.New()
-	router.GET("/image", handler)      // GET image from server PATH
-	router.POST("/upload", UploadFile) // POST image using multipart/form-data
+	router.GET("/image", getImage)    // GET image from server PATH
+	router.POST("/upload", postImage) // POST image using multipart/form-data
 
 	// Server
 	env_config()
@@ -49,31 +49,26 @@ func env_config() {
 
 // Get Image from PATH
 
-func handler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	img := getImage()
+func getImage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	img := imageHandle()
 	writeImage(w, &img)
 }
 
-func getImage() image.Image {
+func imageHandle() image.Image {
 
 	existingImageFile, err := os.Open("a.png")
-	if err != nil {
-	}
+	errorHandler(err)
 
 	defer existingImageFile.Close()
 
 	_, imageType, err := image.Decode(existingImageFile)
-
-	if err != nil {
-	}
+	errorHandler(err)
 
 	fmt.Println(imageType)
-
 	existingImageFile.Seek(0, 0)
 
 	loadedImage, err := png.Decode(existingImageFile)
-	if err != nil {
-	}
+	errorHandler(err)
 
 	return loadedImage
 }
@@ -98,8 +93,7 @@ func writeImage(w http.ResponseWriter, img *image.Image) {
 
 // POST image
 
-// UploadFile uploads a file to the server
-func UploadFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func postImage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
@@ -128,17 +122,11 @@ func saveFile(w http.ResponseWriter, file multipart.File, handle *multipart.File
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
 		fmt.Fprintf(w, "%v", err)
-		fmt.Println("Here1")
 		return
 	}
-
 	err = ioutil.WriteFile("./files/"+handle.Filename, data, 0666)
-	if err != nil {
-		fmt.Fprintf(w, "%v", err)
-
-		return
-	}
-	jsonResponse(w, http.StatusCreated, "File uploaded successfully!.")
+	errorHandler(err)
+	jsonResponse(w, http.StatusCreated, "File uploaded successfully!")
 }
 
 func jsonResponse(w http.ResponseWriter, code int, message string) {
@@ -147,7 +135,15 @@ func jsonResponse(w http.ResponseWriter, code int, message string) {
 	fmt.Fprint(w, message)
 }
 
-// Testing
+// Error Handler
+
+func errorHandler(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// Test Handler
 
 func return10() int {
 	return 10
