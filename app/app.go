@@ -19,11 +19,9 @@ import (
 	"os"
 	"strconv"
 
-	// External frameroks
+	// Router
 	"github.com/julienschmidt/httprouter"
 )
-
-// Main function
 
 func main() {
 
@@ -32,11 +30,10 @@ func main() {
 	router.GET("/image", handler)      // GET image from server PATH
 	router.POST("/upload", UploadFile) // POST image using multipart/form-data
 
-	router
-
-	// Trigger server
+	// Server
 	env_config()
 	http.ListenAndServe(":3003", router)
+
 }
 
 // Enviroment Setup
@@ -65,12 +62,11 @@ func getImage() image.Image {
 
 	defer existingImageFile.Close()
 
-	imageData, imageType, err := image.Decode(existingImageFile)
+	_, imageType, err := image.Decode(existingImageFile)
 
 	if err != nil {
 	}
 
-	fmt.Println(imageData)
 	fmt.Println(imageType)
 
 	existingImageFile.Seek(0, 0)
