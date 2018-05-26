@@ -43,10 +43,11 @@ deploy:
   before_script:
     # - curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
     # - heroku --version
-    - docker login --email=_ --username=_ --password=$HEROKU registry.heroku.com
+    - docker login --username=_ --password=$HEROKU registry.heroku.com
   script:
     # - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
-    - docker tag registry.gitlab.com/baldissera/nexteimageserver registry.heroku.com/nexte-server-image/beta
+    - docker pull registry.gitlab.com/baldissera/nexteimageserver:latest
+    - docker tag registry.gitlab.com/baldissera/nexteimageserver:latest registry.heroku.com/nexte-server-image/beta
     - docker push registry.heroku.com/nexte-server-image/beta
   # only:
   #   - tags
