@@ -1,15 +1,9 @@
 image: registry.gitlab.com/baldissera/nexteimageserver
-stages:
-  - build
-  - test
 
-# Build application
-build:
-  stage: build
-  before_script:
-    - cd app 
-  script:
-    - go build app.go
+stages:
+  - test
+  - build
+  - deploy
 
 # Run test with coverage
 unit_test:
@@ -19,17 +13,38 @@ unit_test:
   script:
     - go test -cover
 
+# Build application
+build_app:
+  stage: test
+  before_script:
+    - cd app 
+  script:
+    - go build app.go
+
 # Create new docker image
-build_image:
-    stage: test
-    image: docker:git
-    services:
-      - docker:dind
-    script:
-      - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
-      - docker build -t registry.gitlab.com/baldissera/nexteimageserver .
-      - docker push registry.gitlab.com/baldissera/nexteimageserver:latest
-    only:
-      - tags
-    
-  #   - tags
+build_image_for_deploy:
+  stage: build
+  image: docker:git
+  services:
+    - docker:dind
+  script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
+    - docker build -t registry.gitlab.com/baldissera/nexteimageserver .
+    - docker push registry.gitlab.com/baldissera/nexteimageserver:latest
+  only:
+    - tags
+
+# Deploy new version to Heroku
+deploy:
+  stage: deploy
+  image: docker:git
+  services:
+    - docker:dind
+  before_script:
+    - docker login --username=_ --password=$HEROKU registry.heroku.com
+  script:
+    - docker pull registry.gitlab.com/baldissera/nexteimageserver:latest
+    - docker tag registry.gitlab.com/baldissera/nexteimageserver:latest registry.heroku.com/nexte-server-image/beta
+    - docker push registry.heroku.com/nexte-server-image/beta
+  only:
+    - tags
