@@ -142,9 +142,3 @@ func errorHandler(err error) {
 		log.Fatal(err)
 	}
 }
-
-// Test Handler
-
-func return10() int {
-	return 10
-}

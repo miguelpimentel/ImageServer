@@ -3,20 +3,11 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
-	"testing"
 	"os"
+	"testing"
 
 	"github.com/julienschmidt/httprouter"
 )
-
-func TestReturn10(t *testing.T) {
-
-	var number = return10()
-
-	if number != 10 {
-		t.Error("Expected 10, got ", number)
-	}
-}
 
 func testJsonResponse(t *testing.T) {
 	rr := httptest.NewRecorder()
@@ -26,7 +17,6 @@ func testJsonResponse(t *testing.T) {
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("Wrong message")
 	}
-
 }
 
 func TestGetImage(t *testing.T) {
@@ -38,6 +28,7 @@ func TestGetImage(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	router.ServeHTTP(rr, req)
+
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("Wrong status")
 	}
@@ -62,6 +53,8 @@ func TestPostImageWithoutImage(t *testing.T) {
 	router := httprouter.New()
 	router.POST("/upload", postImage)
 
+	body
+
 	req, _ := http.NewRequest("POST", "/upload", nil)
 	rr := httptest.NewRecorder()
 	t.Log(rr.Code)
@@ -71,8 +64,6 @@ func TestPostImageWithoutImage(t *testing.T) {
 		t.Errorf("Wrong status")
 	}
 }
-
-
 
 func TestPostImageWithImage(t *testing.T) {
 
@@ -89,13 +80,8 @@ func TestPostImageWithImage(t *testing.T) {
 		t.Errorf("Wrong status")
 	}
 
-
 }
 
 func testSaveFile(t *testing.T) {
 
-	
-	
 }
-
-
