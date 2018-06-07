@@ -53,8 +53,6 @@ func TestPostImageWithoutImage(t *testing.T) {
 	router := httprouter.New()
 	router.POST("/upload", postImage)
 
-	body
-
 	req, _ := http.NewRequest("POST", "/upload", nil)
 	rr := httptest.NewRecorder()
 	t.Log(rr.Code)
@@ -79,9 +77,5 @@ func TestPostImageWithImage(t *testing.T) {
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("Wrong status")
 	}
-
-}
-
-func testSaveFile(t *testing.T) {
 
 }
