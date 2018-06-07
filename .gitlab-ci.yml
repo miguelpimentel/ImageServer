@@ -9,6 +9,8 @@ stages:
 unit_test:
   stage: test
   before_script:
+    - go get -u github.com/gorilla/mux
+    - go get -u cloud.google.com/go/storage
     - cd app 
   script:
     - go test -cover
@@ -17,6 +19,8 @@ unit_test:
 build_app:
   stage: build
   before_script:
+    - go get -u github.com/gorilla/mux
+    - go get -u cloud.google.com/go/storage
     - cd app 
   script:
     - go build app.go router.go storage.go
