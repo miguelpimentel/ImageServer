@@ -12,7 +12,6 @@ import (
 func testJsonResponse(t *testing.T) {
 	rr := httptest.NewRecorder()
 	jsonResponse(rr, http.StatusOK, "The test has passed")
-	//testMessage := "The test has passed"
 
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("Wrong message")
