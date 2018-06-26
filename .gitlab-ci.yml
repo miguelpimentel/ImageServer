@@ -1,25 +1,29 @@
 image: registry.gitlab.com/baldissera/nexteimageserver
 
 stages:
-  - test
   - build
+  - test
   - deploy
 
 # Run test with coverage
 unit_test:
   stage: test
   before_script:
+    - go get -u github.com/gorilla/mux
+    - go get -u cloud.google.com/go/storage
     - cd app 
   script:
     - go test -cover
 
 # Build application
 build_app:
-  stage: test
+  stage: build
   before_script:
+    - go get -u github.com/gorilla/mux
+    - go get -u cloud.google.com/go/storage
     - cd app 
   script:
-    - go build app.go
+    - go build app.go router.go storage.go
 
 # Create new docker image
 build_image_for_deploy:
